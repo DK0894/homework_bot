@@ -40,7 +40,7 @@ logger.addHandler(handler)
 
 
 def send_message(bot, message):
-    """Отправляет сообщение в Telegram чат"""
+    """Отправляет сообщение в Telegram чат."""
     try:
         bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
@@ -98,16 +98,17 @@ def parse_status(homework):
 def check_tokens():
     """Проверка доступности переменных окружения."""
     some_variables = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]
-    for variable in some_variables:
-        if variable is not None:
-            return True
-    logger.critical(f'Отсутствует переменная окружения')
+    try:
+        for variable in some_variables:
+            if variable is not None:
+                return True
+    except exceptions.MissingToken as error:
+        logger.critical(f'Отсутствует переменная окружения: {error}')
     return False
 
 
 def main():
     """Основная логика работы бота."""
-
     check_tokens()
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)

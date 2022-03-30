@@ -25,9 +25,9 @@ class UnknownStatusAPI(Exception):
     pass
 
 
-# class NotResponseNewStatus(Exception):
-#     """Исключение при отсутствии в ответе новых статусов"""
-#     pass
+class MissingToken(Exception):
+    """Исключение при отсутствии токена"""
+    pass
 
 
 class ServerError(Exception):
