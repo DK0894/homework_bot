@@ -116,7 +116,7 @@ def parse_status(homework):
     homework_status = homework.get('status')
     try:
         HOMEWORK_STATUSES[homework_status]
-    except Exception as error:
+    except KeyError as error:
         logger.error(f'Неизвестный статус домашней работы: KeyError - {error}')
     verdict = HOMEWORK_STATUSES[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
