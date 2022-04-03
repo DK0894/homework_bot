@@ -116,7 +116,7 @@ def parse_status(homework):
     homework_status = homework.get('status')
     try:
         HOMEWORK_STATUSES[homework_status]
-    except KeyError as error:
+    except Exception as error:
         logger.error(f'Неизвестный статус домашней работы: KeyError - {error}')
     verdict = HOMEWORK_STATUSES[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
@@ -131,7 +131,6 @@ def check_tokens():
         }
     for variable, exp in some_variables.items():
         if exp is None:
-            logger.critical(f'Отсутствует переменная окружения: {variable}')
             return False
     return True
 
@@ -149,10 +148,11 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     if not check_tokens():
+        logger.error('Отсутствует переменная окружения')
         exit()
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
+    current_timestamp = 0
     message_error = None
 
     while True:
