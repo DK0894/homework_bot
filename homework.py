@@ -27,20 +27,6 @@ HOMEWORK_STATUSES = {
 
 
 """Настройка логгирования с отправкой сообщения об ошибке в чат telegram."""
-
-
-# Переопределяю класс Handler для отправки сообщения в чат ботом.
-# class TelegramBotHandler(logging.Handler):
-#     def __init__(self, token, chat_id):
-#         super().__init__()
-#         self.token = token
-#         self.chat_id = chat_id
-#
-#     def emit(self, record):
-#         bot = telegram.Bot(self.token)
-#         bot.send_message(self.chat_id, self.format(record))
-
-
 if __name__ == '__main__':
     logging.basicConfig(
         level=logging.INFO,
@@ -58,11 +44,6 @@ if __name__ == '__main__':
         '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
     )
     handler_file.setFormatter(formatter)
-    # handler_chat = TelegramBotHandler(
-    #     token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID
-    # )
-    # handler_chat.setLevel(level=logging.ERROR)
-    # logger.addHandler(handler_chat)
 
 
 def send_message(bot, message):
