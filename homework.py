@@ -124,10 +124,10 @@ def parse_status(homework):
 def check_tokens():
     """Проверка доступности переменных окружения."""
     some_variables = {
-            'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
-            'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
-            'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID
-        }
+        'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
+        'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
+        'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID
+    }
     for variable, exp in some_variables.items():
         if exp is None:
             return False
