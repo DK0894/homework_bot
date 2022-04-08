@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import time
@@ -6,6 +7,8 @@ from http import HTTPStatus
 import requests
 import telegram
 from dotenv import load_dotenv
+
+import exceptions
 
 load_dotenv()
 
@@ -27,23 +30,22 @@ HOMEWORK_STATUSES = {
 
 
 """Настройка логгирования с отправкой сообщения об ошибке в чат telegram."""
-if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        filename='project_log.log',
-        format='%(asctime)s - %(levelname)s - %(name)s - %(message)s'
-    )
-    logger = logging.getLogger(__name__)
-    handler_stream = logging.StreamHandler()
-    logger.addHandler(handler_stream)
-    handler_file = logging.FileHandler(
-        filename='bot_log_file', mode='w', encoding='UTF-8'
-    )
-    logger.addHandler(handler_file)
-    formatter = logging.Formatter(
-        '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
-    )
-    handler_file.setFormatter(formatter)
+logging.basicConfig(
+    level=logging.INFO,
+    filename='project_log.log',
+    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+handler_stream = logging.StreamHandler()
+logger.addHandler(handler_stream)
+handler_file = logging.FileHandler(
+    filename='bot_log_file', mode='w', encoding='UTF-8'
+)
+logger.addHandler(handler_file)
+formatter = logging.Formatter(
+    '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+)
+handler_file.setFormatter(formatter)
 
 
 def send_message(bot, message):
@@ -62,9 +64,14 @@ def get_api_answer(current_timestamp):
     """Проверка доступности URL ENDPOINT."""
     timestamp = current_timestamp
     params = {'from_date': timestamp}
-    response = requests.get(
-        ENDPOINT, headers=HEADERS, params=params
-    )
+    try:
+        response = requests.get(
+            ENDPOINT, headers=HEADERS, params=params
+        )
+    except Exception as error:
+        message = f'Не удалось выполнить запрос к API: {error}'
+        logger.error(message)
+        raise exceptions.WrongRequestToAPI(message)
     if response.status_code != HTTPStatus.OK:
         logger.error(
             f'URL {ENDPOINT} недоступен: {telegram.TelegramError.__name__}'
@@ -72,7 +79,7 @@ def get_api_answer(current_timestamp):
         raise telegram.TelegramError(message=f'URL {ENDPOINT} недоступен')
     try:
         response.json()
-    except NameError as error:
+    except json.JSONDecodeError as error:
         logger.error(f'JSON сломан: {error}')
     return response.json()
 
@@ -83,9 +90,13 @@ def check_response(response):
         response['homeworks']
     except KeyError as error:
         logger.error(f'Получен некорректный ответ API: KeyError - {error}')
+    if type(response['homeworks']) is not list:
+        logger.error(f'Тип данных response["homeworks"] не list')
+    if type(response['homeworks'][0]) is not dict:
+        logger.error(f'Тип данных response["homeworks"][0] не dict')
     try:
         response['homeworks'][0].get('homework_name')
-    except telegram.TelegramError as error:
+    except IndexError as error:
         logger.error(f'Отсутствуют данные о названии работы - {error}')
     return response['homeworks']
 
@@ -95,7 +106,7 @@ def parse_status(homework):
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     try:
-        homework_status in HOMEWORK_STATUSES
+        HOMEWORK_STATUSES[homework_status]
     except KeyError as error:
         logger.error(f'Неизвестный статус домашней работы: KeyError - {error}')
     verdict = HOMEWORK_STATUSES[homework_status]
@@ -111,6 +122,7 @@ def check_tokens():
     }
     for variable, exp in some_variables.items():
         if exp is None:
+            logger.error(f'Отсутствует токен {variable}')
             return False
     return True
 
@@ -118,7 +130,6 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     if not check_tokens():
-        logger.error('Отсутствует переменная окружения')
         exit()
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
@@ -132,7 +143,7 @@ def main():
             if 'status' in homeworks[0]:
                 message = parse_status(homeworks[0])
                 send_message(bot, message)
-            current_timestamp = response.get('current_date')
+            current_timestamp = response.get('current_date', current_timestamp)
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
