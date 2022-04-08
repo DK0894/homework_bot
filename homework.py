@@ -91,9 +91,9 @@ def check_response(response):
     except KeyError as error:
         logger.error(f'Получен некорректный ответ API: KeyError - {error}')
     if type(response['homeworks']) is not list:
-        logger.error(f'Тип данных response["homeworks"] не list')
+        logger.error('Тип данных response["homeworks"] не list')
     if type(response['homeworks'][0]) is not dict:
-        logger.error(f'Тип данных response["homeworks"][0] не dict')
+        logger.error('Тип данных response["homeworks"][0] не dict')
     try:
         response['homeworks'][0].get('homework_name')
     except IndexError as error:
