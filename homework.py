@@ -88,7 +88,7 @@ def check_response(response):
     if not isinstance(response['homeworks'][0], dict):
         logger.error('Тип данных response["homeworks"][0] не dict')
     if response['homeworks'][0].get('homework_name') is None:
-        logger.error(f'Отсутствуют данные о названии домашней работы')
+        logger.error('Отсутствуют данные о названии домашней работы')
     try:
         return response['homeworks']
     except KeyError as error:
