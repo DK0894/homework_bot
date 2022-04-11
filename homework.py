@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import sys
 import time
 from http import HTTPStatus
 
@@ -68,37 +69,30 @@ def get_api_answer(current_timestamp):
         response = requests.get(
             ENDPOINT, headers=HEADERS, params=params
         )
-    except Exception as error:
-        message = f'Не удалось выполнить запрос к API: {error}'
-        logger.error(message)
-        raise exceptions.WrongRequestToAPI(message)
+    except requests.RequestException as error:
+        logger.error(f'Не удалось выполнить запрос к API: {error}')
+        raise exceptions.WrongRequestToAPI()
     if response.status_code != HTTPStatus.OK:
-        logger.error(
-            f'URL {ENDPOINT} недоступен: {telegram.TelegramError.__name__}'
-        )
-        raise telegram.TelegramError(message=f'URL {ENDPOINT} недоступен')
+        logger.error(f'URL {ENDPOINT} недоступен')
+        raise exceptions.URLNotAvailable
     try:
-        response.json()
+        return response.json()
     except json.JSONDecodeError as error:
         logger.error(f'JSON сломан: {error}')
-    return response.json()
 
 
 def check_response(response):
     """Проверяет ответ API на корректность."""
+    if not isinstance(response['homeworks'], list):
+        logger.error('Тип данных response["homeworks"] не list')
+    if not isinstance(response['homeworks'][0], dict):
+        logger.error('Тип данных response["homeworks"][0] не dict')
+    if response['homeworks'][0].get('homework_name') is None:
+        logger.error(f'Отсутствуют данные о названии домашней работы')
     try:
-        response['homeworks']
+        return response['homeworks']
     except KeyError as error:
         logger.error(f'Получен некорректный ответ API: KeyError - {error}')
-    if type(response['homeworks']) is not list:
-        logger.error('Тип данных response["homeworks"] не list')
-    if type(response['homeworks'][0]) is not dict:
-        logger.error('Тип данных response["homeworks"][0] не dict')
-    try:
-        response['homeworks'][0].get('homework_name')
-    except IndexError as error:
-        logger.error(f'Отсутствуют данные о названии работы - {error}')
-    return response['homeworks']
 
 
 def parse_status(homework):
@@ -106,11 +100,14 @@ def parse_status(homework):
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     try:
-        HOMEWORK_STATUSES[homework_status]
+        verdict = HOMEWORK_STATUSES[homework_status]
     except KeyError as error:
-        logger.error(f'Неизвестный статус домашней работы: KeyError - {error}')
-    verdict = HOMEWORK_STATUSES[homework_status]
-    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+        logger.error(f'Неизвестный статус домашней работы: {error}')
+        raise exceptions.NoHomeworkStatus
+    if homework_status is not None:
+        return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    else:
+        logger.error('Отсутстувует ключевое слово "status"')
 
 
 def check_tokens():
@@ -130,7 +127,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     if not check_tokens():
-        exit()
+        sys.exit(1)
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
@@ -140,9 +137,8 @@ def main():
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
-            if 'status' in homeworks[0]:
-                message = parse_status(homeworks[0])
-                send_message(bot, message)
+            message = parse_status(homeworks[0])
+            send_message(bot, message)
             current_timestamp = response.get('current_date', current_timestamp)
 
         except Exception as error:
