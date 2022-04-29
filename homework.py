@@ -70,11 +70,13 @@ def get_api_answer(current_timestamp):
             ENDPOINT, headers=HEADERS, params=params
         )
     except requests.RequestException as error:
-        logger.error(f'Не удалось выполнить запрос к API: {error}')
-        raise exceptions.WrongRequestToAPI()
+        massage = f'Не удалось выполнить запрос к API: {error}'
+        logger.error(massage)
+        raise exceptions.WrongRequestToAPI(massage)
     if response.status_code != HTTPStatus.OK:
-        logger.error(f'URL {ENDPOINT} недоступен')
-        raise exceptions.URLNotAvailable
+        massage = f'URL {ENDPOINT} недоступен'
+        logger.error(massage)
+        raise exceptions.URLNotAvailable(massage)
     try:
         return response.json()
     except json.JSONDecodeError as error:
@@ -84,15 +86,21 @@ def get_api_answer(current_timestamp):
 def check_response(response):
     """Проверяет ответ API на корректность."""
     if not isinstance(response['homeworks'], list):
-        logger.error('Тип данных response["homeworks"] не list')
+        massage = 'Тип данных response["homeworks"] не list'
+        logger.error(massage)
+        raise exceptions.DataTypeNotCorrect(massage)
     if not isinstance(response['homeworks'][0], dict):
-        logger.error('Тип данных response["homeworks"][0] не dict')
+        massage = 'Тип данных response["homeworks"][0] не dict'
+        logger.error(massage)
+        raise exceptions.DataTypeNotCorrect(massage)
     if response['homeworks'][0].get('homework_name') is None:
         logger.error('Отсутствуют данные о названии домашней работы')
     try:
         return response['homeworks']
     except KeyError as error:
-        logger.error(f'Получен некорректный ответ API: KeyError - {error}')
+        massage = f'Получен некорректный ответ API: KeyError - {error}'
+        logger.error(massage)
+        raise KeyError(massage)
 
 
 def parse_status(homework):
@@ -102,8 +110,9 @@ def parse_status(homework):
     try:
         verdict = HOMEWORK_STATUSES[homework_status]
     except KeyError as error:
-        logger.error(f'Неизвестный статус домашней работы: {error}')
-        raise exceptions.NoHomeworkStatus
+        massage = f'Неизвестный статус домашней работы: {error}'
+        logger.error(massage)
+        raise exceptions.NoHomeworkStatus(massage)
     if homework_status is not None:
         return f'Изменился статус проверки работы "{homework_name}". {verdict}'
     else:
@@ -130,7 +139,7 @@ def main():
         sys.exit(1)
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
+    current_timestamp = 0    # int(time.time())
     message_error = None
 
     while True:

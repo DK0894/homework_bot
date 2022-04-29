@@ -1,16 +1,22 @@
 class WrongRequestToAPI(Exception):
     """Не удалось выполнить запрос к API Практикум.Домашка."""
-    def __str__(self):
-        return WrongRequestToAPI.__doc__
+    def __init__(self, massage):
+        self.massage = massage
 
 
 class URLNotAvailable(Exception):
     """URL недоступено, код ответа сервера не 200."""
-    def __str__(self):
-        return URLNotAvailable.__doc__
+    def __init__(self, massage):
+        self.massage = massage
 
 
 class NoHomeworkStatus(KeyError):
     """Отсутствуют данные о статусе домешней работы."""
-    def __str__(self):
-        return NoHomeworkStatus.__doc__
+    def __init__(self, massage):
+        self.massage = massage
+
+
+class DataTypeNotCorrect(Exception):
+    """Некорректный тип данных в JSON файле ответа API."""
+    def __init__(self, massage):
+        self.massage = massage
