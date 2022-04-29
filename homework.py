@@ -139,7 +139,7 @@ def main():
         sys.exit(1)
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = 0    # int(time.time())
+    current_timestamp = int(time.time())
     message_error = None
 
     while True:
