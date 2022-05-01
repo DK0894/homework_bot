@@ -70,37 +70,35 @@ def get_api_answer(current_timestamp):
             ENDPOINT, headers=HEADERS, params=params
         )
     except requests.RequestException as error:
-        massage = f'Не удалось выполнить запрос к API: {error}'
-        logger.error(massage)
-        raise exceptions.WrongRequestToAPI(massage)
+        message = f'Не удалось выполнить запрос к API: {error}'
+        raise exceptions.WrongRequestToAPI(message)
     if response.status_code != HTTPStatus.OK:
-        massage = f'URL {ENDPOINT} недоступен'
-        logger.error(massage)
-        raise exceptions.URLNotAvailable(massage)
+        message = f'URL {ENDPOINT} недоступен'
+        raise exceptions.URLNotAvailable(message)
     try:
         return response.json()
     except json.JSONDecodeError as error:
-        logger.error(f'JSON сломан: {error}')
+        message = f'JSON сломан: {error}'
+        raise exceptions.JSONInvalidCode(message)
 
 
 def check_response(response):
     """Проверяет ответ API на корректность."""
     if not isinstance(response['homeworks'], list):
-        massage = 'Тип данных response["homeworks"] не list'
-        logger.error(massage)
-        raise exceptions.DataTypeNotCorrect(massage)
+        message = 'Тип данных response["homeworks"] не list'
+        raise exceptions.DataTypeNotCorrect(message)
     if not isinstance(response['homeworks'][0], dict):
-        massage = 'Тип данных response["homeworks"][0] не dict'
-        logger.error(massage)
-        raise exceptions.DataTypeNotCorrect(massage)
+        message = 'Тип данных response["homeworks"][0] не dict'
+        raise exceptions.DataTypeNotCorrect(message)
     if response['homeworks'][0].get('homework_name') is None:
+        # Если вызываю исключение, то не проходит pytest, т.к. в тесте
+        # передается status:"unknown"
         logger.error('Отсутствуют данные о названии домашней работы')
     try:
         return response['homeworks']
     except KeyError as error:
-        massage = f'Получен некорректный ответ API: KeyError - {error}'
-        logger.error(massage)
-        raise KeyError(massage)
+        message = f'Получен некорректный ответ API: KeyError - {error}'
+        raise KeyError(message)
 
 
 def parse_status(homework):
@@ -110,13 +108,13 @@ def parse_status(homework):
     try:
         verdict = HOMEWORK_STATUSES[homework_status]
     except KeyError as error:
-        massage = f'Неизвестный статус домашней работы: {error}'
-        logger.error(massage)
-        raise exceptions.NoHomeworkStatus(massage)
+        message = f'Неизвестный статус домашней работы: {error}'
+        raise exceptions.NoHomeworkStatus(message)
     if homework_status is not None:
         return f'Изменился статус проверки работы "{homework_name}". {verdict}'
     else:
-        logger.error('Отсутстувует ключевое слово "status"')
+        message = 'Отсутстувует ключевое слово "status"'
+        raise exceptions.KeywordStatusLost(message)
 
 
 def check_tokens():
@@ -152,6 +150,7 @@ def main():
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
+            logger.error(message)
             if message_error != message:
                 message_error = message
                 send_message(bot, message)
