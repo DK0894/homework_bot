@@ -26,3 +26,8 @@ class JSONInvalidCode(Exception):
 class KeywordStatusLost(Exception):
     """Отсутстувует ключевое слово 'status'"""
     pass
+
+
+class KeywordHomeworkNameLost(Exception):
+    """Отсутствуют данные о названии домашней работы"""
+    pass

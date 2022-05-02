@@ -91,14 +91,8 @@ def check_response(response):
         message = 'Тип данных response["homeworks"][0] не dict'
         raise exceptions.DataTypeNotCorrect(message)
     if response['homeworks'][0].get('homework_name') is None:
-        # Если вызываю исключение, то не проходит pytest, т.к. в тесте
-        # передается status:"unknown"
         logger.error('Отсутствуют данные о названии домашней работы')
-    try:
-        return response['homeworks']
-    except KeyError as error:
-        message = f'Получен некорректный ответ API: KeyError - {error}'
-        raise KeyError(message)
+    return response['homeworks']
 
 
 def parse_status(homework):
@@ -110,6 +104,10 @@ def parse_status(homework):
     except KeyError as error:
         message = f'Неизвестный статус домашней работы: {error}'
         raise exceptions.NoHomeworkStatus(message)
+    if homework_name is None:
+        message = 'Отсутствуют данные о названии домашней работы'
+        logger.error(message)
+        raise exceptions.KeywordHomeworkNameLost(message)
     if homework_status is not None:
         return f'Изменился статус проверки работы "{homework_name}". {verdict}'
     else:
@@ -126,7 +124,7 @@ def check_tokens():
     }
     for variable, exp in some_variables.items():
         if exp is None:
-            logger.error(f'Отсутствует токен {variable}')
+            logger.critical(f'Отсутствует токен {variable}')
             return False
     return True
 
